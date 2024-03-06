@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/mattn/go-mastodon"
+	"os"
 	"time"
 )
 
@@ -18,6 +19,7 @@ func main() {
 
 	if *clientId == "" || *clientSecret == "" || *instance == "" || *accessToken == "" {
 		fmt.Println("All flags must be set, please --help for info")
+		os.Exit(3)
 	}
 
 	client := mastodon.NewClient(&mastodon.Config{

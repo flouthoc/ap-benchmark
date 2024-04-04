@@ -4,7 +4,7 @@
 set -eux
 
 # Build ap_benchmark binary
-make clean
+make clean || true
 make build
 
 SERVER_URL="http://localhost:8080"
@@ -16,6 +16,7 @@ REGISTRATION_EMAIL="${2}"
 REGISTRATION_PASSWORD="very safe password 123"
 REGISTRATION_AGREEMENT="true"
 REGISTRATION_LOCALE="en"
+LOAD_REQUESTS=FOO="${3:-1}"
 
 # Step 1: create the app to register the new account
 CREATE_APP_RESPONSE=$(curl --fail -s -X POST -F "client_name=${CLIENT_NAME}" -F "redirect_uris=${REDIRECT_URI}" "${SERVER_URL}/api/v1/apps")

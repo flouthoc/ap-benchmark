@@ -1,0 +1,2 @@
+* {.service.name="GoToSocial" && .http.route="/api/v1/statuses"}
+* {.service.name="GoToSocial" && .http.route="/api/v1/statuses"}

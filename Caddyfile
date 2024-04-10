@@ -1,0 +1,71 @@
+(cors) {
+	@cors_preflight{args[0]} {
+		method OPTIONS
+		header Origin {args[0]}
+	}
+	@cors{args[0]} header Origin {args[0]}
+
+	handle @cors_preflight{args[0]} {
+		header {
+			Access-Control-Allow-Origin "{args[0]}"
+			Access-Control-Allow-Credentials true
+			Access-Control-Allow-Headers "*"
+			Access-Control-Allow-Methods "*"
+			Access-Control-Max-Age "3600"
+			Vary Origin
+			defer
+		}
+		respond "" 204
+	}
+
+	handle @cors{args[0]} {
+		header {
+			Access-Control-Allow-Origin "{args[0]}"
+			Access-Control-Allow-Credentials true
+			Access-Control-Expose-Headers *
+			Access-Control-Allow-Headers "*"
+			Access-Control-Allow-Methods "*"
+			Access-Control-Max-Age "3600"
+			Vary Origin
+			defer
+		}
+	}
+}
+
+one.localhost {
+	log {
+		output file one.logs
+		level DEBUG
+	}
+	import cors https//one.localhost
+	#import cors http://one.localhost
+	reverse_proxy localhost:8080
+	#reverse_proxy localhost:8080 {
+	#	header_up Host {http.reverse_proxy.upstream.hostport}
+	#	header_up Host {https.reverse_proxy.upstream.hostport}
+	#}
+}
+
+two.localhost {
+	log {
+		output file two.logs
+		level DEBUG
+	}
+	import cors https//two.localhost
+	#import cors http://two.localhost
+	reverse_proxy localhost:8081
+	#reverse_proxy localhost:8081 {
+	#	header_up Host {http.reverse_proxy.upstream.hostport}
+	#	header_up Host {https.reverse_proxy.upstream.hostport}
+	#}
+}
+
+sema.localhost {
+	#import cors http://sema.localhost
+	import cors https//sema.localhost
+	reverse_proxy localhost:4002
+	#reverse_proxy localhost:4002 {
+	#	header_up Host {http.reverse_proxy.upstream.hostport}
+	#	header_up Host {https.reverse_proxy.upstream.hostport}
+	#}
+}

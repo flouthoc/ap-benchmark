@@ -7,13 +7,13 @@ set -eux
 make clean || true
 make build
 
-SERVER_URL="http://localhost:8080"
+SERVER_URL=${SERVER_URL:-"http://localhost:8080"}
 REDIRECT_URI="${SERVER_URL}"
 CLIENT_NAME="Test Application Name"
 REGISTRATION_REASON="Testing whether or not this dang diggity thing works!"
 REGISTRATION_USERNAME="${1}"
 REGISTRATION_EMAIL="${2}"
-REGISTRATION_PASSWORD="very safe password 123"
+REGISTRATION_PASSWORD="very good password 123"
 REGISTRATION_AGREEMENT="true"
 REGISTRATION_LOCALE="en"
 LOAD_REQUESTS=FOO="${3:-1}"

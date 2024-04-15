@@ -1,0 +1,1 @@
+SERVER_URL_SECOND=https://two.localhost SERVER_URL=https://one.localhost ./run_test.sh userone7 userone7@one.localhost usersecond7 usersecond7@two.localhost

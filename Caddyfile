@@ -69,3 +69,8 @@ sema.localhost {
 	#	header_up Host {https.reverse_proxy.upstream.hostport}
 	#}
 }
+
+#172.18.73.2:8888 {
+#        root * /tmp
+#        file_server browse
+#}

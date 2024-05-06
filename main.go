@@ -1,15 +1,16 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/mattn/go-mastodon"
+	"io"
 	"io/ioutil"
 	"log"
-	"bufio"
 	"math/rand"
 	"net/http"
 	"os"
@@ -79,6 +80,7 @@ func main() {
 	parallel := flag.Bool("parallel", false, "Parallel request or sequential")
 	deleteToots := flag.Bool("delete-toots", false, "Delete toots when test ends")
 	showOutputGraph := flag.Bool("show-graph", false, "Show output graph")
+	remoteMetricsPath := flag.String("remote-metrics", "", "Remote metrics URL")
 	outputFileName := ""
 
 	flag.Parse()
@@ -149,10 +151,17 @@ func main() {
 			plotGraph("parallel", points)
 			outputFileName = "parallel.png"
 		} else {
+			if *remoteMetricsPath != "" {
+				err := DownloadFile(METRICS_PATH, *remoteMetricsPath)
+				if err != nil {
+					fmt.Println("Error while downloading raw metrics from remote server")
+					panic(err)
+				}
+			}
 			points := durationToPlotters(readMetrics(METRICS_PATH))
 			plotGraph("parallel-federated", points)
 			outputFileName = "parallel-federated.png"
-			
+
 		}
 	} else {
 		for j := 0; j < numberRequests; j++ {
@@ -166,6 +175,11 @@ func main() {
 			plotGraph("sequential", points)
 			outputFileName = "sequential.png"
 		} else {
+			err := DownloadFile(METRICS_PATH, *remoteMetricsPath)
+			if err != nil {
+				fmt.Println("Error while downloading raw metrics from remote server")
+				panic(err)
+			}
 			points := durationToPlotters(readMetrics(METRICS_PATH))
 			plotGraph("sequential-federated", points)
 			outputFileName = "sequential-federated.png"
@@ -192,6 +206,21 @@ func main() {
 	}
 }
 
+func DownloadFile(filepath string, url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
 func readMetrics(path string) []time.Duration {
 	result := []time.Duration{}
 	file, err := os.Open(path)
@@ -207,7 +236,7 @@ func readMetrics(path string) []time.Duration {
 		line := scanner.Text()
 		split := strings.Split(line, " ")
 		durationStr := split[len(split)-1]
-		parsedDuration, err  := time.ParseDuration(durationStr)
+		parsedDuration, err := time.ParseDuration(durationStr)
 		if err != nil {
 			panic(fmt.Sprintf("Unable to parse duration from metrics %+v\n", err))
 		}

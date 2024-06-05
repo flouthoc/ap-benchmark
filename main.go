@@ -81,6 +81,7 @@ func main() {
 	deleteToots := flag.Bool("delete-toots", false, "Delete toots when test ends")
 	showOutputGraph := flag.Bool("show-graph", false, "Show output graph")
 	remoteMetricsPath := flag.String("remote-metrics", "", "Remote metrics URL")
+	dormantUsers := flag.Bool("dormant-followers", false, "suffix followers with dormant key")
 	outputFileName := ""
 
 	flag.Parse()
@@ -118,7 +119,7 @@ func main() {
 			followers = append(followers,
 				Follower{Instance: *instanceSecond})
 		}
-		createAndAcceptFollowers(client, userIdFirst, followers)
+		createAndAcceptFollowers(client, userIdFirst, followers, *dormantUsers)
 	}
 
 	if *followersLocal > 0 {
@@ -127,7 +128,7 @@ func main() {
 			followers = append(followers,
 				Follower{Instance: *instance})
 		}
-		createAndAcceptFollowers(client, userIdFirst, followers)
+		createAndAcceptFollowers(client, userIdFirst, followers, *dormantUsers)
 	}
 
 	numberRequests := *load
@@ -249,10 +250,13 @@ func readMetrics(path string) []time.Duration {
 	return result
 }
 
-func createAndAcceptFollowers(parentUserClient *mastodon.Client, parentUserId string, followers []Follower) {
+func createAndAcceptFollowers(parentUserClient *mastodon.Client, parentUserId string, followers []Follower, dormant bool) {
 	for _, follower := range followers {
 
 		username := generateRandomString(10)
+		if dormant {
+			username = username + "_dormant"
+		}
 		accessTokenSecond, userIdSecond, clientIdSecond, clientSecretSecond, err := createUser(username, follower.Instance)
 		if err != nil {
 			panic(fmt.Sprintf("Failed creating user: %+v\n", err))

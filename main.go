@@ -176,10 +176,12 @@ func main() {
 			plotGraph("sequential", points)
 			outputFileName = "sequential.png"
 		} else {
-			err := DownloadFile(METRICS_PATH, *remoteMetricsPath)
-			if err != nil {
-				fmt.Println("Error while downloading raw metrics from remote server")
-				panic(err)
+			if *remoteMetricsPath != "" {
+				err := DownloadFile(METRICS_PATH, *remoteMetricsPath)
+				if err != nil {
+					fmt.Println("Error while downloading raw metrics from remote server")
+					panic(err)
+				}
 			}
 			points := durationToPlotters(readMetrics(METRICS_PATH))
 			plotGraph("sequential-federated", points)

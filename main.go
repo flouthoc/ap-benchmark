@@ -72,6 +72,7 @@ type Follower struct {
 
 func main() {
 	var wg sync.WaitGroup
+	var resultThroughput float64
 
 	instance := flag.String("instance", getEnv("SERVER_URL", ""), "Activitypub first instance")
 	instanceSecond := flag.String("instance-second", getEnv("SERVER_URL_SECOND", ""), "Activitypub second instance")
@@ -192,6 +193,7 @@ func main() {
 		}
 		metrics.Close()
 		fmt.Printf("------Metrics are %+v\n", metrics)
+		resultThroughput = metrics.Throughput
 	}
 
 	timeline, err = client.GetTimelinePublic(context.Background(), false, nil)
@@ -208,6 +210,7 @@ func main() {
 	fmt.Printf("Number of tweets in first user's home timeline %+v\n\n", len(timeline))
 	fmt.Printf("Post durations %+v\n", postResults)
 	fmt.Printf("Metrics graph generated at %s\n", outputFileName)
+	fmt.Printf("Final throughput for this run is %+v req per second\n", resultThroughput)
 
 	if *showOutputGraph {
 		//runCommand("xdg-open", outputFileName)

@@ -6,6 +6,7 @@ usage() {
     echo "  --producer-instance    Host URL for instance which will produce /inbox request"
     echo "  --consumer-instance    Host URL for instance which will consume /inbox request"
     echo "  --load                 Number of requests to fire"
+    echo "  --client               Number of clients on the host"
     exit 1
 }
 
@@ -13,6 +14,8 @@ usage() {
 if [ $# -eq 0 ]; then
     usage
 fi
+
+client=1
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -34,6 +37,11 @@ while [[ $# -gt 0 ]]; do
             shift # past argument
             shift # past value
             ;;
+        --client)
+            client="$2"
+            shift # past argument
+            shift # past value
+            ;;
         --help)
             usage
             ;;
@@ -50,7 +58,10 @@ if [ -z "$producerInstance" ] || [ -z "$consumerInstance" ] || [ -z "$load" ]; t
     usage
 fi
 
-./main -instance $producerInstance -instance-second $consumerInstance -load $load &
+for ((i=1; i<=$client; i++))
+do
+  ./main -instance $producerInstance -instance-second $consumerInstance -load $load > /dev/null 2>&1 &
+done
 ./main -instance $consumerInstance -load $load &
 wait
 

@@ -207,6 +207,7 @@ func main() {
 	}
 	fmt.Printf("Number of tweets in first user's home timeline %+v\n\n", len(timeline))
 	fmt.Printf("Post durations %+v\n", postResults)
+	fmt.Printf("Metrics graph generated at %s\n", outputFileName)
 
 	if *showOutputGraph {
 		//runCommand("xdg-open", outputFileName)

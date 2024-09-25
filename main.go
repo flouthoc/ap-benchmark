@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/mattn/go-mastodon"
+	vegeta "github.com/tsenart/vegeta/lib"
 	"io"
 	"io/ioutil"
 	"log"
@@ -141,8 +142,8 @@ func main() {
 			wg.Add(1)
 			go func() {
 				postDuration, deleteDuration := createToots(client, *deleteToots)
-				postResults = append(postResults, postDuration)
-				deleteResults = append(deleteResults, deleteDuration)
+				postResults = append(postResults, postDuration.Latency)
+				deleteResults = append(deleteResults, deleteDuration.Latency)
 				defer wg.Done()
 			}()
 		}
@@ -165,10 +166,12 @@ func main() {
 
 		}
 	} else {
+		var metrics vegeta.Metrics
 		for j := 0; j < numberRequests; j++ {
 			postDuration, deleteDuration := createToots(client, *deleteToots)
-			postResults = append(postResults, postDuration)
-			deleteResults = append(deleteResults, deleteDuration)
+			metrics.Add(&postDuration)
+			postResults = append(postResults, postDuration.Latency)
+			deleteResults = append(deleteResults, deleteDuration.Latency)
 
 		}
 		if *instanceSecond == "" {
@@ -187,6 +190,8 @@ func main() {
 			plotGraph("sequential-federated", points)
 			outputFileName = "sequential-federated.png"
 		}
+		metrics.Close()
+		fmt.Printf("------Metrics are %+v\n", metrics)
 	}
 
 	timeline, err = client.GetTimelinePublic(context.Background(), false, nil)
@@ -202,7 +207,6 @@ func main() {
 	}
 	fmt.Printf("Number of tweets in first user's home timeline %+v\n\n", len(timeline))
 	fmt.Printf("Post durations %+v\n", postResults)
-	fmt.Printf("Metrics graph generated at %s\n", outputFileName)
 
 	if *showOutputGraph {
 		//runCommand("xdg-open", outputFileName)
@@ -306,7 +310,9 @@ func createAndAcceptFollowers(parentUserClient *mastodon.Client, parentUserId st
 	}
 }
 
-func createToots(client *mastodon.Client, deleteToot bool) (time.Duration, time.Duration) {
+func createToots(client *mastodon.Client, deleteToot bool) (vegeta.Result, vegeta.Result) {
+	var startResult vegeta.Result
+	var endResult vegeta.Result
 	start := time.Now()
 	status, err := client.PostStatus(context.Background(), &mastodon.Toot{
 		Status: "Setting sample status",
@@ -317,6 +323,9 @@ func createToots(client *mastodon.Client, deleteToot bool) (time.Duration, time.
 	}
 	t := time.Now()
 	postDuration := t.Sub(start)
+	startResult.Code = 200
+	startResult.Timestamp = start
+	startResult.Latency = postDuration
 	fmt.Printf("Duration: %+v to post a status\n", postDuration)
 
 	fmt.Println("Posted status id is: " + status.ID)
@@ -328,9 +337,12 @@ func createToots(client *mastodon.Client, deleteToot bool) (time.Duration, time.
 		client.DeleteStatus(context.Background(), status.ID)
 		t = time.Now()
 		deleteDuration = t.Sub(start)
+		endResult.Code = 200
+		endResult.Timestamp = start
+		endResult.Latency = deleteDuration
 		fmt.Printf("Duration: %+v to delete a status \n", postDuration, deleteDuration)
 	}
-	return postDuration, deleteDuration
+	return startResult, endResult
 }
 
 func createUser(username, serverURL string) (string, string, string, string, error) {

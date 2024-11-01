@@ -1,0 +1,8 @@
+
+Clients: 2, GTS: 529 requests cdn: 1002
+Clients: 4, GTS: 552 requests, cdn: 2003
+Clients: 8, GTS: 596 requests, cdn: 4008
+Clients: 16,GTS: 699 requests, cdn: 7515
+Clients: 32,GTS: 883 requests, cdn: 14028
+Clients: 64,GTS: 1283 requests, cdn: 26550
+Clients: 128,GTS: 2674 requests, cdn: 46456

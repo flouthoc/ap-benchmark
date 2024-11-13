@@ -84,6 +84,8 @@ func main() {
 	showOutputGraph := flag.Bool("show-graph", false, "Show output graph")
 	remoteMetricsPath := flag.String("remote-metrics", "", "Remote metrics URL")
 	dormantUsers := flag.Bool("dormant-followers", false, "suffix followers with dormant key")
+	weight := flag.Bool("weight", false, "Split work load in weight")
+	totalRequests := flag.Int("total-req", 10, "Total requests")
 	outputFileName := ""
 
 	flag.Parse()
@@ -91,6 +93,17 @@ func main() {
 	if *instance == "" {
 		fmt.Println("All flags must be set, please --help for info")
 		os.Exit(3)
+	}
+
+	totalUsers := 0
+	weightedFollowers := 1
+	weightedLoad := *load
+	weightedFetch := 0
+	if *weight {
+		totalUsers = ((5 * *totalRequests) / 100)
+		weightedFollowers = ((10 * *totalRequests) / 100)
+		weightedLoad = ((35 * *totalRequests) / 100)
+		weightedFetch = ((50 * *totalRequests) / 100)
 	}
 
 	username := generateRandomString(10)
@@ -106,13 +119,34 @@ func main() {
 		AccessToken:  accessToken,
 	})
 
-	timeline, err := client.GetTimelineHome(context.Background(), nil)
+	fmt.Printf("------creating total users %+v\n", totalUsers)
+	for i := 1; i < totalUsers; i++ {
+		username = generateRandomString(10)
+		accessToken, userIdFirst, clientId, clientSecret, err = createUser(username, *instance)
+		if err != nil {
+			panic(fmt.Sprintf("Failed creating user: %+v\n", err))
+		}
+
+		client = mastodon.NewClient(&mastodon.Config{
+			Server:       *instance,
+			ClientID:     clientId,
+			ClientSecret: clientSecret,
+			AccessToken:  accessToken,
+		})
+	}
+
+	/*timeline, err := client.GetTimelineHome(context.Background(), nil)
 	if err != nil {
 		fmt.Println("Error while fetching the timeline:\n")
 		panic(err)
 	}
 	for i := len(timeline) - 1; i >= 0; i-- {
 		fmt.Println(timeline[i])
+	}*/
+
+	if *weight {
+		*followersFederated = weightedFollowers
+		*followersLocal = weightedFollowers
 	}
 
 	if *instanceSecond != "" {
@@ -134,6 +168,9 @@ func main() {
 	}
 
 	numberRequests := *load
+	if *weight {
+		numberRequests = weightedLoad
+	}
 	parallelRequests := *parallel
 	postResults := []time.Duration{}
 	deleteResults := []time.Duration{}
@@ -196,7 +233,7 @@ func main() {
 		resultThroughput = metrics.Throughput
 	}
 
-	timeline, err = client.GetTimelinePublic(context.Background(), false, nil)
+	timeline, err := client.GetTimelinePublic(context.Background(), false, nil)
 	if err != nil {
 		fmt.Println("Error while fetching the timeline:\n")
 		panic(err)
@@ -206,6 +243,19 @@ func main() {
 	if err != nil {
 		fmt.Println("Error while fetching the timeline:\n")
 		panic(err)
+	}
+	for i := 1; i < weightedFetch; i++ {
+		timeline, err := client.GetTimelinePublic(context.Background(), false, nil)
+		if err != nil {
+			fmt.Println("Error while fetching the timeline:\n")
+			panic(err)
+		}
+		fmt.Printf("Number of tweets in first user's public timeline %+v\n\n", len(timeline))
+		timeline, err = client.GetTimelineHome(context.Background(), nil)
+		if err != nil {
+			fmt.Println("Error while fetching the timeline:\n")
+			panic(err)
+		}
 	}
 	fmt.Printf("Number of tweets in first user's home timeline %+v\n\n", len(timeline))
 	fmt.Printf("Post durations %+v\n", postResults)

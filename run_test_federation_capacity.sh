@@ -61,6 +61,8 @@ fi
 for ((i=1; i<=$client; i++))
 do
   ./main -instance $producerInstance -instance-second $consumerInstance -load $load > /dev/null 2>&1 &
+  #./main -instance $producerInstance -instance-second $consumerInstance -load $load &
+  #./main -instance $producerInstance -instance-second $consumerInstance -load $load
 done
 ./main -instance $consumerInstance -load $load &
 wait
